@@ -14,12 +14,13 @@ impl<T: ?Sized> *const T {
     ///
     /// ## Behavior during const evaluation
     ///
-    /// When this function is used during const evaluation, it may return `false` for pointers
-    /// that turn out to be null at runtime. Specifically, when a pointer to some memory
-    /// is offset beyond its bounds in such a way that the resulting pointer is null,
-    /// the function will still return `false`. There is no way for CTFE to know
-    /// the absolute position of that memory, so we cannot tell if the pointer is
-    /// null or not.
+    /// If this method is used during const evaluation, and `self` is a pointer
+    /// that is offset beyond the bounds of the memory it initially pointed to,
+    /// then this method might or might not panic. Otherwise, it will not panic.
+    ///
+    /// This is because CTFE only knows `self`'s offset relative to the memory
+    /// it initially pointed to, and not its absolute address. This might or
+    /// might not be sufficient to determine nullness.
     ///
     /// # Examples
     ///
