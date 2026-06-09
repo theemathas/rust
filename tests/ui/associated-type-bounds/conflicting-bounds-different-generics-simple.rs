@@ -1,4 +1,3 @@
-//@build-pass
 // We currently accept conflicting associated type bounds with different generics,
 // which results in some weirdness.
 // See https://github.com/rust-lang/rust/issues/154662

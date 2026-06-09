@@ -69,7 +69,7 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
                 dummy_self,
                 &mut user_written_bounds,
                 PredicateFilter::SelfOnly,
-                OverlappingAsssocItemConstraints::Forbidden,
+                OverlappingAsssocItemConstraints::Allowed,
             );
             if let Err(GenericArgCountMismatch { invalid_args, .. }) = result.correct {
                 potential_assoc_items.extend(invalid_args);
@@ -143,15 +143,44 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
             }
         }
 
+        // Detect conflicting bounds from expanding trait aliases and from supertraits.
+        //
+        // Note that expanded_trait_aliases above already deduplicates syntactically
+        // identical bounds. So, this check does not error on such duplicated bounds.
+        //
+        // We need to prohibit conflicting bounds from the same item_def_id,
+        // even if they have different generics. This is because those generics might
+        // end up being instantiated with the same concrete type, causing unsoundness.
+        // See https://github.com/rust-lang/rust/issues/154662.
+        //
+        // This check could be more lenient, allowing conflicting bounds on different
+        // generics that we know for sure cannot be instantiated into identical concrete
+        // types. But for now, we're being conservative.
+        let mut projection_bounds_ignoring_generics = FxIndexMap::default();
+        for &(proj, proj_span) in &elaborated_projection_bounds {
+            let item_def_id = proj.item_def_id();
+            if let Some((old_proj, old_proj_span)) =
+                projection_bounds_ignoring_generics.insert(item_def_id, (proj, proj_span))
+            {
+                let kind = tcx.def_descr(item_def_id);
+                let name = tcx.item_name(item_def_id);
+                self.dcx()
+                    .struct_span_err(span, format!("conflicting {kind} bindings for `{name}`"))
+                    .with_span_label(
+                        old_proj_span,
+                        format!("`{name}` is specified to be `{}` here", old_proj.term()),
+                    )
+                    .with_span_label(
+                        proj_span,
+                        format!("`{name}` is specified to be `{}` here", proj.term()),
+                    )
+                    .emit();
+            }
+        }
+        drop(projection_bounds_ignoring_generics);
+
         // Map the projection bounds onto a key that makes it easy to remove redundant
         // bounds that are constrained by supertraits of the principal trait.
-        //
-        // Also make sure we detect conflicting bounds from expanding trait aliases.
-        //
-        // FIXME(#150936): Since the elaborated projection bounds also include the user-written ones
-        //                 and we're separately rejecting duplicate+conflicting bindings for trait
-        //                 object types when lowering assoc item bindings, there are basic cases
-        //                 where we're emitting two distinct but very similar diagnostics.
         let mut projection_bounds = FxIndexMap::default();
         for (proj, proj_span) in elaborated_projection_bounds {
             let item_def_id = proj.item_def_id();
@@ -175,23 +204,11 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
                     proj.map_bound(|proj| proj.projection_term.trait_ref(tcx)),
                 ),
             );
-            if let Some((old_proj, old_proj_span)) =
-                projection_bounds.insert(key, (proj, proj_span))
-                && tcx.anonymize_bound_vars(proj) != tcx.anonymize_bound_vars(old_proj)
-            {
-                let kind = tcx.def_descr(item_def_id);
-                let name = tcx.item_name(item_def_id);
-                self.dcx()
-                    .struct_span_err(span, format!("conflicting {kind} bindings for `{name}`"))
-                    .with_span_label(
-                        old_proj_span,
-                        format!("`{name}` is specified to be `{}` here", old_proj.term()),
-                    )
-                    .with_span_label(
-                        proj_span,
-                        format!("`{name}` is specified to be `{}` here", proj.term()),
-                    )
-                    .emit();
+            if let Some((_, old_proj_span)) = projection_bounds.insert(key, (proj, proj_span)) {
+                self.dcx().span_delayed_bug(
+                    vec![old_proj_span, proj_span],
+                    "We should have already deduplicated item_def_ids",
+                );
             }
         }
 
