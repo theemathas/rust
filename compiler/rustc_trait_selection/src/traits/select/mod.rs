@@ -27,8 +27,8 @@ use rustc_middle::ty::error::TypeErrorToStringExt;
 use rustc_middle::ty::print::{PrintTraitRefExt as _, with_no_trimmed_paths};
 use rustc_middle::ty::{
     self, CandidatePreferenceMode, CantBeErased, DeepRejectCtxt, GenericArgsRef,
-    PolyProjectionPredicate, SizedTraitKind, Ty, TyCtxt, TypeFoldable, TypeVisitableExt,
-    TypingMode, Unnormalized, Upcast, elaborate, may_use_unstable_feature,
+    PolyProjectionPredicate, SizedTraitKind, Ty, TyCtxt, TypeFoldable, TypeFolder,
+    TypeVisitableExt, TypingMode, Unnormalized, Upcast, elaborate, may_use_unstable_feature,
 };
 use rustc_next_trait_solver::solve::AliasBoundKind;
 use rustc_span::Symbol;
@@ -773,6 +773,17 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
 
                 ty::PredicateKind::DynCompatible(trait_def_id) => {
                     if self.tcx().is_dyn_compatible(trait_def_id) {
+                        Ok(EvaluatedToOk)
+                    } else {
+                        Ok(EvaluatedToErr)
+                    }
+                }
+
+                ty::PredicateKind::DynCoherentAssocs(ty) => {
+                    if self
+                        .tcx()
+                        .does_dyn_have_coherent_assocs(TypeFreshener::new(&self.infcx).fold_ty(ty))
+                    {
                         Ok(EvaluatedToOk)
                     } else {
                         Ok(EvaluatedToErr)

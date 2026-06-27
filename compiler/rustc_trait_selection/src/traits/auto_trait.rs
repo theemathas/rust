@@ -809,6 +809,7 @@ impl<'tcx> AutoTraitFinder<'tcx> {
                 | ty::PredicateKind::NormalizesTo(..)
                 | ty::PredicateKind::AliasRelate(..)
                 | ty::PredicateKind::DynCompatible(..)
+                | ty::PredicateKind::DynCoherentAssocs(..)
                 | ty::PredicateKind::Subtype(..)
                 | ty::PredicateKind::Coerce(..)
                 | ty::PredicateKind::Clause(ty::ClauseKind::UnstableFeature(_))

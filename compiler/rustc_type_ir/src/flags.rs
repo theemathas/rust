@@ -420,6 +420,9 @@ impl<I: Interner> FlagComputation<I> {
                 self.add_term(term);
             }
             ty::PredicateKind::DynCompatible(_def_id) => {}
+            ty::PredicateKind::DynCoherentAssocs(ty) => {
+                self.add_ty(ty);
+            }
             ty::PredicateKind::Clause(ty::ClauseKind::ConstEvaluatable(uv)) => {
                 self.add_const(uv);
             }

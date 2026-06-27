@@ -737,6 +737,7 @@ where
         let vis = match goal.predicate.kind().skip_binder() {
             ty::PredicateKind::Clause(_)
             | ty::PredicateKind::DynCompatible(_)
+            | ty::PredicateKind::DynCoherentAssocs(_)
             | ty::PredicateKind::Subtype(_)
             | ty::PredicateKind::Coerce(_)
             | ty::PredicateKind::ConstEquate(_, _)
@@ -947,6 +948,9 @@ where
                 }
                 ty::PredicateKind::DynCompatible(trait_def_id) => {
                     ecx.compute_dyn_compatible_goal(trait_def_id)?
+                }
+                ty::PredicateKind::DynCoherentAssocs(_ty) => {
+                    todo!();
                 }
                 ty::PredicateKind::Clause(ty::ClauseKind::WellFormed(term)) => {
                     ecx.compute_well_formed_goal(Goal { param_env, predicate: term })?

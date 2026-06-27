@@ -740,6 +740,9 @@ impl<'tcx> Stable<'tcx> for ty::PredicateKind<'tcx> {
             PredicateKind::DynCompatible(did) => {
                 crate::ty::PredicateKind::DynCompatible(tables.trait_def(*did))
             }
+            PredicateKind::DynCoherentAssocs(ty) => {
+                crate::ty::PredicateKind::DynCoherentAssocs(ty.stable(tables, cx))
+            }
             PredicateKind::Subtype(subtype_predicate) => {
                 crate::ty::PredicateKind::SubType(subtype_predicate.stable(tables, cx))
             }

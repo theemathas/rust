@@ -998,6 +998,14 @@ impl<'a, 'tcx> TypeVisitor<TyCtxt<'tcx>> for WfPredicates<'a, 'tcx> {
                     self.out.extend(obligations);
                 }
 
+                self.out.push(traits::Obligation::with_depth(
+                    tcx,
+                    self.cause(ObligationCauseCode::WellFormed(None)),
+                    self.recursion_depth,
+                    self.param_env,
+                    ty::Binder::dummy(ty::PredicateKind::DynCoherentAssocs(t)),
+                ));
+
                 if !t.has_escaping_bound_vars() {
                     for projection in data.projection_bounds() {
                         let pred_binder = projection

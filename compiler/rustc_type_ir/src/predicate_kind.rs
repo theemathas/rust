@@ -70,6 +70,22 @@ pub enum PredicateKind<I: Interner> {
     /// Trait must be dyn-compatible.
     DynCompatible(I::TraitId),
 
+    /// Prohibit `dyn` types with two associated type/const bounds on the same
+    /// associated type/const `DefId`, and have generics that could be
+    /// instantiated into the same concrete types, but the bounds have
+    /// syntactically unequal terms.
+    ///
+    /// Such types could otherwise be instantiated into a concrete type with conflicting
+    /// associated types, violating coherence, which is unsound. See #154662.
+    ///
+    /// This predicate is registered as an obligation as part of wf-checks
+    /// of `dyn` types.
+    ///
+    /// Checking this predicate is conceptually like checking for
+    /// the coherence of the builtin impls for `dyn`, to make sure that the
+    /// associated type/const don't conflict with each other between the impls.
+    DynCoherentAssocs(I::Ty),
+
     /// `T1 <: T2`
     ///
     /// This obligation is created most often when we have two
@@ -157,6 +173,9 @@ impl<I: Interner> fmt::Debug for PredicateKind<I> {
             PredicateKind::Coerce(pair) => pair.fmt(f),
             PredicateKind::DynCompatible(trait_def_id) => {
                 write!(f, "DynCompatible({trait_def_id:?})")
+            }
+            PredicateKind::DynCoherentAssocs(ty) => {
+                write!(f, "DynCoherentAssocs({ty:?})")
             }
             PredicateKind::ConstEquate(c1, c2) => write!(f, "ConstEquate({c1:?}, {c2:?})"),
             PredicateKind::Ambiguous => write!(f, "Ambiguous"),

@@ -5,7 +5,7 @@ use rustc_data_structures::obligation_forest::{
     Error, ForestObligation, ObligationForest, ObligationProcessor, Outcome, ProcessResult,
 };
 use rustc_hir::def_id::LocalDefId;
-use rustc_infer::infer::DefineOpaqueTypes;
+use rustc_infer::infer::{DefineOpaqueTypes, TypeFreshener};
 use rustc_infer::traits::{
     FromSolverError, PolyTraitObligation, PredicateObligations, ProjectionCacheKey, SelectionError,
     TraitEngine,
@@ -14,8 +14,8 @@ use rustc_middle::bug;
 use rustc_middle::ty::abstract_const::NotConstEvaluatable;
 use rustc_middle::ty::error::{ExpectedFound, TypeError};
 use rustc_middle::ty::{
-    self, Binder, Const, DelayedSet, GenericArgsRef, Ty, TyCtxt, TypeSuperVisitable, TypeVisitable,
-    TypeVisitableExt, TypeVisitor, TypingMode, may_use_unstable_feature,
+    self, Binder, Const, DelayedSet, GenericArgsRef, Ty, TyCtxt, TypeFolder, TypeSuperVisitable,
+    TypeVisitable, TypeVisitableExt, TypeVisitor, TypingMode, may_use_unstable_feature,
 };
 use thin_vec::{ThinVec, thin_vec};
 use tracing::{debug, debug_span, instrument};
@@ -443,6 +443,7 @@ impl<'a, 'tcx> ObligationProcessor for FulfillProcessor<'a, 'tcx> {
                 | ty::PredicateKind::Clause(ty::ClauseKind::ConstArgHasType(..))
                 | ty::PredicateKind::Clause(ty::ClauseKind::WellFormed(_))
                 | ty::PredicateKind::DynCompatible(_)
+                | ty::PredicateKind::DynCoherentAssocs(_)
                 | ty::PredicateKind::Subtype(_)
                 | ty::PredicateKind::Coerce(_)
                 | ty::PredicateKind::Clause(ty::ClauseKind::ConstEvaluatable(..))
@@ -523,6 +524,18 @@ impl<'a, 'tcx> ObligationProcessor for FulfillProcessor<'a, 'tcx> {
 
                 ty::PredicateKind::DynCompatible(trait_def_id) => {
                     if !self.selcx.tcx().is_dyn_compatible(trait_def_id) {
+                        ProcessResult::Error(FulfillmentErrorCode::Select(
+                            SelectionError::Unimplemented,
+                        ))
+                    } else {
+                        ProcessResult::Changed(Default::default())
+                    }
+                }
+
+                ty::PredicateKind::DynCoherentAssocs(ty) => {
+                    if !self.selcx.tcx().does_dyn_have_coherent_assocs(
+                        TypeFreshener::new(&self.selcx.infcx).fold_ty(ty),
+                    ) {
                         ProcessResult::Error(FulfillmentErrorCode::Select(
                             SelectionError::Unimplemented,
                         ))

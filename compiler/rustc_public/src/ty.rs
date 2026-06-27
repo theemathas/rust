@@ -1522,6 +1522,7 @@ pub struct GenericPredicates {
 pub enum PredicateKind {
     Clause(ClauseKind),
     DynCompatible(TraitDef),
+    DynCoherentAssocs(Ty),
     SubType(SubtypePredicate),
     Coerce(CoercePredicate),
     ConstEquate(TyConst, TyConst),

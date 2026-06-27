@@ -54,6 +54,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             | ty::PredicateKind::Clause(ty::ClauseKind::TypeOutlives(..))
             | ty::PredicateKind::Clause(ty::ClauseKind::WellFormed(..))
             | ty::PredicateKind::DynCompatible(..)
+            | ty::PredicateKind::DynCoherentAssocs(..)
             | ty::PredicateKind::NormalizesTo(..)
             | ty::PredicateKind::AliasRelate(..)
             | ty::PredicateKind::Clause(ty::ClauseKind::ConstEvaluatable(..))

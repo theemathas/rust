@@ -121,6 +121,7 @@ pub fn compute_implied_outlives_bounds_inner<'tcx>(
                 | ty::PredicateKind::Coerce(..)
                 | ty::PredicateKind::Clause(ty::ClauseKind::Projection(..))
                 | ty::PredicateKind::DynCompatible(..)
+                | ty::PredicateKind::DynCoherentAssocs(..)
                 | ty::PredicateKind::Clause(ty::ClauseKind::ConstEvaluatable(..))
                 | ty::PredicateKind::ConstEquate(..)
                 | ty::PredicateKind::Ambiguous

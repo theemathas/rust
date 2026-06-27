@@ -703,6 +703,10 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                         err
                     }
 
+                    ty::PredicateKind::DynCoherentAssocs(_) => {
+                        todo!()
+                    }
+
                     ty::PredicateKind::Clause(ty::ClauseKind::WellFormed(ty)) => {
                         let ty = self.resolve_vars_if_possible(ty);
                         if self.next_trait_solver() {

@@ -1610,6 +1610,10 @@ rustc_queries! {
     query is_dyn_compatible(trait_id: DefId) -> bool {
         desc { "checking if trait `{}` is dyn-compatible", tcx.def_path_str(trait_id) }
     }
+    /// Used to check [`rustc_ir::PredicateKind::DynCoherentAssocs`].
+    query does_dyn_have_coherent_assocs(ty: Ty<'tcx>) -> bool {
+        desc { "checking if trait object type `{}` has coherent associated item bounds", ty }
+    }
 
     /// Gets the ParameterEnvironment for a given item; this environment
     /// will be in "user-facing" mode, meaning that it is suitable for

@@ -5,6 +5,7 @@
 pub mod auto_trait;
 pub(crate) mod coherence;
 pub mod const_evaluatable;
+mod dyn_coherent_assocs;
 mod dyn_compatibility;
 pub mod effects;
 mod engine;
@@ -934,6 +935,7 @@ fn is_impossible_associated_item(
 }
 
 pub fn provide(providers: &mut Providers) {
+    dyn_coherent_assocs::provide(providers);
     dyn_compatibility::provide(providers);
     vtable::provide(providers);
     *providers = Providers {

@@ -3247,6 +3247,11 @@ define_print! {
                 p.print_def_path(trait_def_id, &[])?;
                 write!(p, "` is dyn-compatible")?;
             }
+            ty::PredicateKind::DynCoherentAssocs(ty) => {
+                write!(p, "the trait object type `")?;
+                ty.print(p)?;
+                write!(p, "` has coherent associated item bounds")?;
+            }
             ty::PredicateKind::ConstEquate(c1, c2) => {
                 write!(p, "the constant `")?;
                 c1.print(p)?;

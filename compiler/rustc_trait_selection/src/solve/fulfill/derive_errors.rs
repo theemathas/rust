@@ -69,6 +69,7 @@ pub(super) fn fulfillment_error_for_no_solution<'tcx>(
         }
         ty::PredicateKind::Clause(_)
         | ty::PredicateKind::DynCompatible(_)
+        | ty::PredicateKind::DynCoherentAssocs(_)
         | ty::PredicateKind::Ambiguous => {
             FulfillmentErrorCode::Select(SelectionError::Unimplemented)
         }
